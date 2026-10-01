@@ -1,0 +1,104 @@
+# =============================================================================
+#  Gambix v2 — .gitignore
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.Python
+pip-wheel-metadata/
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# ---------------------------------------------------------------------------
+# Data — never commit raw or processed chess data to the repo
+# ---------------------------------------------------------------------------
+data/raw/
+data/processed/
+data/tablebase_cache.db
+data/annotation_cache.db
+data/etag_cache.db
+data/chesscom_state.json
+data/annotation_settings.json
+*.pgn.zst
+*.pgn.bz2
+*.pgn.gz
+
+# Test suite data (large files — download via script)
+data/test_suites/wac.pgn
+data/test_suites/bratko_kopec.pgn
+data/test_suites/sts/
+data/test_suites/lichess_puzzles_10k.csv
+
+# Keep the manifest and small fixtures committed
+!data/MANIFEST.jsonl
+!data/test_suites/perft_positions.json
+!tests/symbolic/gold/positions.json
+!tests/verifier/adversarial_set.json
+
+# ---------------------------------------------------------------------------
+# Models — large binaries go to HF Hub, not git
+# ---------------------------------------------------------------------------
+models/
+*.onnx
+*.pt
+*.bin
+*.safetensors
+
+# ---------------------------------------------------------------------------
+# MLflow / experiment tracking
+# ---------------------------------------------------------------------------
+mlruns/
+mlflow.db
+
+# ---------------------------------------------------------------------------
+# Coverage / testing artefacts
+# ---------------------------------------------------------------------------
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.mutmut-cache/
+
+# ---------------------------------------------------------------------------
+# IDE / OS
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------------------------------------------------------------------------
+# Secrets — never commit
+# ---------------------------------------------------------------------------
+.env
+.env.*
+secrets.yaml
+secrets.json
+
+# ---------------------------------------------------------------------------
+# MkDocs build output
+# ---------------------------------------------------------------------------
+site/
+
+# ---------------------------------------------------------------------------
+# Human-eval results (contain personal rater data)
+# ---------------------------------------------------------------------------
+data/human_eval/results.db
