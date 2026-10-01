@@ -19,9 +19,6 @@ dependencies = [
   "python-chess>=1.999",
   # Engine interface
   "stockfish>=3.28",
-  # Graph Neural Network
-  "torch>=2.3",
-  "torch-geometric>=2.5",
   # Data validation / schemas
   "pydantic>=2.7",
   # API layer
@@ -29,15 +26,13 @@ dependencies = [
   "uvicorn[standard]>=0.30",
   "httpx>=0.27",
   # LLM constrained decoding
-  "outlines>=0.0.46",
+  "outlines>=0.0.40",
   # Data storage / caching
   "duckdb>=0.10",
   # Experiment tracking
   "mlflow>=2.13",
-  # Explainability
-  "captum>=0.7",
-  # UI
-  "gradio>=4.36",
+  # UI  (4.x has win_amd64 wheels; 4.36+ does not on all platforms)
+  "gradio>=4.0",
   # Data processing
   "pandas>=2.2",
   "pyarrow>=16.0",
@@ -45,6 +40,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Install ML stack separately using the PyTorch index:
+#   pip install -e ".[ml]" --extra-index-url https://download.pytorch.org/whl/cpu
+ml = [
+  "torch>=2.3",
+  "torch-geometric>=2.5",
+  "captum>=0.7",
+]
+
 dev = [
   # Testing
   "pytest>=8.2",
