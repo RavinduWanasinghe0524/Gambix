@@ -1,0 +1,89 @@
+# =============================================================================
+#  Gambix v2 — Release Pipeline
+#  Triggers on version tags: v2.*.*
+#
+#  Steps:
+#    1. Run full CI (lint + test)
+#    2. Build Python package
+#    3. Publish to Hugging Face Spaces (CPU free tier)
+#    4. Deploy MkDocs to GitHub Pages
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v2.*.*"
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Run full CI before releasing
+  # ---------------------------------------------------------------------------
+  ci-check:
+    name: Pre-release CI
+    uses: ./.github/workflows/ci.yml
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Build Python package
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build Package
+    runs-on: ubuntu-latest
+    needs: ci-check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install hatchling build
+      - run: python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Publish to Hugging Face Spaces
+  # ---------------------------------------------------------------------------
+  deploy-hf-space:
+    name: Deploy to HF Space
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install huggingface_hub
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/ci/deploy_hf_space.py \
+            --repo-id "gambix/gambix-v2" \
+            --source-dir "huggingface/" \
+            --token "$HF_TOKEN"
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Deploy MkDocs to GitHub Pages
+  # ---------------------------------------------------------------------------
+  deploy-docs:
+    name: Deploy Docs to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for mkdocs-git-revision-date
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: pip install mkdocs-material mkdocs-git-revision-date-localized-plugin
+      - run: mkdocs gh-deploy --force
