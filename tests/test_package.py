@@ -13,15 +13,25 @@ import importlib
 import json
 import subprocess
 import sys
-import textwrap
 from pathlib import Path
 
 import pytest
+
+SCRIPT_PATH = Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py"
+
+
+def run_licence_gate() -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, str(SCRIPT_PATH)],
+        capture_output=True,
+        text=True,
+    )
 
 
 # ---------------------------------------------------------------------------
 # Package import & metadata
 # ---------------------------------------------------------------------------
+
 
 class TestPackageImport:
     def test_gambix_importable(self) -> None:
@@ -32,6 +42,7 @@ class TestPackageImport:
     def test_version_string_set(self) -> None:
         """__version__ must be a non-empty semver-like string."""
         import gambix
+
         assert hasattr(gambix, "__version__")
         parts = gambix.__version__.split(".")
         assert len(parts) == 3, f"Expected semver, got {gambix.__version__!r}"
@@ -40,6 +51,7 @@ class TestPackageImport:
     def test_licence_attribute(self) -> None:
         """Licence must be GPLv3 or later."""
         import gambix
+
         assert "GPL-3.0" in gambix.__license__
 
 
@@ -47,93 +59,99 @@ class TestPackageImport:
 # CI gate: check_licence_tiers.py
 # ---------------------------------------------------------------------------
 
+
 class TestLicenceTierGate:
-    def test_passes_when_no_manifest(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_passes_when_no_manifest(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Gate must exit 0 (pass) when MANIFEST.jsonl does not exist yet."""
         monkeypatch.chdir(tmp_path)
-        result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
-        )
+        result = run_licence_gate()
         assert result.returncode == 0, result.stderr
 
-    def test_passes_with_tier_a_only(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_passes_with_tier_a_only(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Gate must exit 0 when manifest contains only Tier A entries."""
         monkeypatch.chdir(tmp_path)
         manifest = tmp_path / "data" / "MANIFEST.jsonl"
         manifest.parent.mkdir(parents=True)
         manifest.write_text(
-            json.dumps({
-                "path": "data/processed/lichess_games.parquet",
-                "source": "lichess",
-                "licence_tier": "A",
-                "retrieved_on": "2026-10-01",
-                "sha256": "abc123",
-            }) + "\n"
+            json.dumps(
+                {
+                    "path": "data/processed/lichess_games.parquet",
+                    "source": "lichess",
+                    "licence_tier": "A",
+                    "retrieved_on": "2026-10-01",
+                    "sha256": "abc123",
+                }
+            )
+            + "\n"
         )
-        result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
-        )
+        result = run_licence_gate()
         assert result.returncode == 0, result.stdout + result.stderr
 
-    def test_fails_with_tier_c_in_release_folder(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_fails_with_tier_c_in_release_folder(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Gate must exit 1 when Tier C data is found in data/processed/."""
         monkeypatch.chdir(tmp_path)
         manifest = tmp_path / "data" / "MANIFEST.jsonl"
         manifest.parent.mkdir(parents=True)
         manifest.write_text(
-            json.dumps({
-                "path": "data/processed/chesscom_games.parquet",
-                "source": "chesscom",
-                "licence_tier": "C",
-                "retrieved_on": "2026-10-01",
-                "sha256": "def456",
-            }) + "\n"
+            json.dumps(
+                {
+                    "path": "data/processed/chesscom_games.parquet",
+                    "source": "chesscom",
+                    "licence_tier": "C",
+                    "retrieved_on": "2026-10-01",
+                    "sha256": "def456",
+                }
+            )
+            + "\n"
         )
-        result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
-        )
+        result = run_licence_gate()
         assert result.returncode == 1, "Expected gate to fail on Tier C data"
         assert "CI GATE FAILED" in result.stdout
 
-    def test_tier_c_outside_processed_is_allowed(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_tier_c_outside_processed_is_allowed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Tier C data in data/raw/ (not release folder) is allowed."""
         monkeypatch.chdir(tmp_path)
         manifest = tmp_path / "data" / "MANIFEST.jsonl"
         manifest.parent.mkdir(parents=True)
         manifest.write_text(
-            json.dumps({
-                "path": "data/raw/chesscom_games.pgn.zst",
-                "source": "chesscom",
-                "licence_tier": "C",
-                "retrieved_on": "2026-10-01",
-                "sha256": "def456",
-            }) + "\n"
+            json.dumps(
+                {
+                    "path": "data/raw/chesscom_games.pgn.zst",
+                    "source": "chesscom",
+                    "licence_tier": "C",
+                    "retrieved_on": "2026-10-01",
+                    "sha256": "def456",
+                }
+            )
+            + "\n"
         )
-        result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
-        )
+        result = run_licence_gate()
         assert result.returncode == 0, result.stdout + result.stderr
 
-    def test_invalid_json_in_manifest_fails(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_invalid_json_in_manifest_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Malformed JSON lines in MANIFEST.jsonl must cause gate to exit 1."""
         monkeypatch.chdir(tmp_path)
         manifest = tmp_path / "data" / "MANIFEST.jsonl"
         manifest.parent.mkdir(parents=True)
         manifest.write_text("THIS IS NOT JSON\n")
-        result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
-        )
+        result = run_licence_gate()
         assert result.returncode == 1
 
 
 # ---------------------------------------------------------------------------
 # Project structure sanity checks
 # ---------------------------------------------------------------------------
+
 
 class TestProjectStructure:
     ROOT = Path(__file__).parent.parent
