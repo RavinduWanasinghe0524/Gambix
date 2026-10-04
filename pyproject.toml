@@ -29,23 +29,22 @@ dependencies = [
   "outlines>=0.0.40",
   # Data storage / caching
   "duckdb>=0.10",
-  # Experiment tracking
-  "mlflow>=2.13",
-  # UI  (4.x has win_amd64 wheels; 4.36+ does not on all platforms)
+  # UI
   "gradio>=4.0",
   # Data processing
-  "pandas>=2.2",
-  "pyarrow>=16.0",
+  "pandas>=2.0",
+  "pyarrow>=14.0",
   "zstandard>=0.22",   # for .zst Lichess dumps
 ]
 
 [project.optional-dependencies]
-# Install ML stack separately using the PyTorch index:
-#   pip install -e ".[ml]" --extra-index-url https://download.pytorch.org/whl/cpu
+# Install ML stack separately:
+#   pip install -e ".[ml]"
 ml = [
   "torch>=2.3",
   "torch-geometric>=2.5",
   "captum>=0.7",
+  "mlflow>=2.13",
 ]
 
 dev = [
@@ -91,10 +90,6 @@ select = [
   "SIM", # flake8-simplify
   "ANN", # flake8-annotations (type hints)
   "N",   # pep8-naming
-]
-ignore = [
-  "ANN101", # missing type for `self`
-  "ANN102", # missing type for `cls`
 ]
 
 [tool.ruff.lint.per-file-ignores]

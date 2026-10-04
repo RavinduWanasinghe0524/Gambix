@@ -13,10 +13,13 @@ import importlib
 import json
 import subprocess
 import sys
-import textwrap
 from pathlib import Path
 
 import pytest
+
+# Helper path to CI scripts
+CI_SCRIPTS_DIR = Path(__file__).parent.parent / "scripts" / "ci"
+LICENCE_CHECKER = str(CI_SCRIPTS_DIR / "check_licence_tiers.py")
 
 
 # ---------------------------------------------------------------------------
@@ -48,16 +51,21 @@ class TestPackageImport:
 # ---------------------------------------------------------------------------
 
 class TestLicenceTierGate:
-    def test_passes_when_no_manifest(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_passes_when_no_manifest(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Gate must exit 0 (pass) when MANIFEST.jsonl does not exist yet."""
         monkeypatch.chdir(tmp_path)
         result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
+            [sys.executable, LICENCE_CHECKER],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0, result.stderr
 
-    def test_passes_with_tier_a_only(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_passes_with_tier_a_only(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Gate must exit 0 when manifest contains only Tier A entries."""
         monkeypatch.chdir(tmp_path)
         manifest = tmp_path / "data" / "MANIFEST.jsonl"
@@ -72,12 +80,15 @@ class TestLicenceTierGate:
             }) + "\n"
         )
         result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
+            [sys.executable, LICENCE_CHECKER],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0, result.stdout + result.stderr
 
-    def test_fails_with_tier_c_in_release_folder(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_fails_with_tier_c_in_release_folder(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Gate must exit 1 when Tier C data is found in data/processed/."""
         monkeypatch.chdir(tmp_path)
         manifest = tmp_path / "data" / "MANIFEST.jsonl"
@@ -92,13 +103,16 @@ class TestLicenceTierGate:
             }) + "\n"
         )
         result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
+            [sys.executable, LICENCE_CHECKER],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 1, "Expected gate to fail on Tier C data"
         assert "CI GATE FAILED" in result.stdout
 
-    def test_tier_c_outside_processed_is_allowed(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_tier_c_outside_processed_is_allowed(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Tier C data in data/raw/ (not release folder) is allowed."""
         monkeypatch.chdir(tmp_path)
         manifest = tmp_path / "data" / "MANIFEST.jsonl"
@@ -113,20 +127,24 @@ class TestLicenceTierGate:
             }) + "\n"
         )
         result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
+            [sys.executable, LICENCE_CHECKER],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0, result.stdout + result.stderr
 
-    def test_invalid_json_in_manifest_fails(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_invalid_json_in_manifest_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Malformed JSON lines in MANIFEST.jsonl must cause gate to exit 1."""
         monkeypatch.chdir(tmp_path)
         manifest = tmp_path / "data" / "MANIFEST.jsonl"
         manifest.parent.mkdir(parents=True)
         manifest.write_text("THIS IS NOT JSON\n")
         result = subprocess.run(
-            [sys.executable, str(Path(__file__).parent.parent / "scripts" / "ci" / "check_licence_tiers.py")],
-            capture_output=True, text=True,
+            [sys.executable, LICENCE_CHECKER],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 1
 
