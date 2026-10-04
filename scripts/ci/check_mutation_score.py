@@ -38,7 +38,7 @@ def main() -> None:
 
     total = survived + killed
     if total == 0:
-        print("⚠️  mutmut returned zero mutants — check paths_to_mutate config.")
+        print("[WARN] mutmut returned zero mutants - check paths_to_mutate config.")
         sys.exit(1)
 
     kill_rate = killed / total
@@ -46,12 +46,12 @@ def main() -> None:
 
     if kill_rate < THRESHOLD:
         print(
-            f"❌ CI GATE FAILED: mutation score {kill_rate:.1%} < "
+            f"[FAIL] CI GATE FAILED: mutation score {kill_rate:.1%} < "
             f"required {THRESHOLD:.0%}"
         )
         sys.exit(1)
     else:
-        print(f"✅ Mutation score gate passed ({kill_rate:.1%} ≥ {THRESHOLD:.0%})")
+        print(f"[PASS] Mutation score gate passed ({kill_rate:.1%} >= {THRESHOLD:.0%})")
         sys.exit(0)
 
 
