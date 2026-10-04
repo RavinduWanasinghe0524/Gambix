@@ -41,13 +41,16 @@ def main() -> None:
                 )
 
     if violations:
-        print("❌ CI GATE FAILED: Tier C data found in data/processed/ (release folder).")
+        print(
+            "[FAIL] CI GATE FAILED: Tier C data found in data/processed/ "
+            "(release folder)."
+        )
         print("   Remove the following entries or move them to a non-release path:")
         for v in violations:
             print(v)
         sys.exit(1)
     else:
-        print("✅ Licence tier check passed — no Tier C data in release folder.")
+        print("[PASS] Licence tier check passed - no Tier C data in release folder.")
         sys.exit(0)
 
 
