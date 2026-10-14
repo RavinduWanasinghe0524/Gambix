@@ -49,7 +49,7 @@ def main() -> None:
             print(v)
         sys.exit(1)
     else:
-        print("✅ Licence tier check passed — no Tier C data in release folder.")
+        print("[PASS] Licence tier check passed - no Tier C data in release folder.")
         sys.exit(0)
 
 
